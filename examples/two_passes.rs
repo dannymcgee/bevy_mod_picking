@@ -2,6 +2,7 @@
 
 use bevy::{core_pipeline::clear_color::ClearColorConfig, prelude::*};
 use bevy_mod_picking::prelude::*;
+use bevy_render::view::RenderLayers;
 
 fn main() {
     App::new()
@@ -28,14 +29,21 @@ fn setup(
         },
         PickableBundle::default(), // <- Makes the mesh pickable.
     ));
-    // cube
+    // sphere
     commands.spawn((
         PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
+            mesh: meshes.add(
+                Mesh::try_from(shape::Icosphere {
+                    subdivisions: 3,
+                    radius: 0.5,
+                })
+                .unwrap(),
+            ),
             material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
-            transform: Transform::from_xyz(0.0, 0.5, 0.0),
+            transform: Transform::from_xyz(0.0, 0.0, 0.0),
             ..default()
         },
+        RenderLayers::layer(1),
         PickableBundle::default(), // <- Makes the mesh pickable.
     ));
     // light
@@ -48,55 +56,28 @@ fn setup(
         transform: Transform::from_xyz(4.0, 8.0, 4.0),
         ..default()
     });
+    // camera transform
+    let camera_transform = Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y);
     // camera
     commands.spawn((Camera3dBundle {
-        transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+        transform: camera_transform,
         ..default()
     },));
-
-    // plane 2
-    commands.spawn((
-        PbrBundle {
-            mesh: meshes.add(shape::Plane::from_size(5.0).into()),
-            material: materials.add(Color::CYAN.into()),
-            transform: Transform::from_xyz(20., 20., 20.),
-            ..default()
-        },
-        PickableBundle::default(), // <- Makes the mesh pickable.
-    ));
-    // cube 2
-    commands.spawn((
-        PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
-            material: materials.add(Color::YELLOW.into()),
-            transform: Transform::from_xyz(20., 20.5, 20.),
-            ..default()
-        },
-        PickableBundle::default(), // <- Makes the mesh pickable.
-    ));
-    // light
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
-            intensity: 1500.0,
-            shadows_enabled: true,
-            ..default()
-        },
-        transform: Transform::from_xyz(18.0, 22.0, 28.0),
-        ..default()
-    });
     // camera 2
-    commands.spawn((Camera3dBundle {
-        transform: Transform::from_xyz(30., 30., 30.0)
-            .looking_at(Vec3::new(20., 20.5, 20.), Vec3::Y),
-        camera_3d: Camera3d {
-            clear_color: ClearColorConfig::None,
+    commands.spawn((
+        Camera3dBundle {
+            transform: camera_transform,
+            camera_3d: Camera3d {
+                clear_color: ClearColorConfig::None,
+                ..default()
+            },
+            camera: Camera {
+                // renders after / on top of the main camera
+                order: 1,
+                ..default()
+            },
             ..default()
         },
-        camera: Camera {
-            // renders after / on top of the main camera
-            order: 1,
-            ..default()
-        },
-        ..default()
-    },));
+        RenderLayers::layer(1),
+    ));
 }
